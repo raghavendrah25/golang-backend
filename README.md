@@ -7,3 +7,6 @@ This repository contains a Golang backend program for an e-commerce website.
 ## Features
 
 *-> Using Go Gin for HTTP framework
+*-> Added Products API
+FIX: Added CORS 
+*-> Added Categories API
