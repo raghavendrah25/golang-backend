@@ -6,4 +6,3 @@ run:
 build:
 	echo "Building for Linux"
 	env GOOS=linux go build -o bin/api main.go
-
