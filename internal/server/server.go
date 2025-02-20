@@ -24,6 +24,7 @@ func NewServer(config Config) (*Server, error) {
 		Engine: engine,
 		Config: config,
 	}
+	engine.Use(s.CORSMiddleware, s.CheckRequest)
 	engine.GET("/products", s.Products)
 	engine.GET("/categories", s.Categories)
 
@@ -31,8 +32,12 @@ func NewServer(config Config) (*Server, error) {
 }
 
 func (s *Server) Run() error {
-	return s.Engine.Run(":8080")
+	return s.Engine.Run(":" + s.Config.Port)
 }
+
+func (s *Server) CORSMiddleware(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "http://localhost:3001")
+} 
 
 func (s *Server) Categories(c *gin.Context) {
 	categories := []category.Category{
@@ -52,7 +57,6 @@ func (s *Server) Categories(c *gin.Context) {
 			Description: "Books Items",
 		},
 	}
-	c.Header("Access-Control-Allow-Origin", "*")
 	c.JSON(http.StatusOK, categories)
 }
 
@@ -118,6 +122,15 @@ func (s *Server) Products(c *gin.Context) {
 			},
 		},
 	}
-	c.Header("Access-Control-Allow-Origin", "*")
 	c.JSON(http.StatusOK, products)
+}
+
+func (s *Server) CheckRequest(c *gin.Context) {
+	authVault := c.GetHeader("Authorization")
+	if authVault != "1234567890" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.Abort()
+		return
+	}
+	c.Next()
 }
