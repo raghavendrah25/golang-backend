@@ -1,32 +1,9 @@
-# Variables
-BINARY_NAME=ecommerce-service
-BUILD_DIR=bin
+run:
+	echo "Run triggered"
+	echo "Golang rocks"
+	go run main.go
 
-# Default target
-all: build
-
-# Build the Go binary
 build:
-	mkdir -p ${BUILD_DIR}
-	go build -o ${BUILD_DIR}/${BINARY_NAME} main.go
-	@echo "✅ Build complete!"
+	echo "Building for Linux"
+	env GOOS=linux go build -o bin/api main.go
 
-# Run the Go application
-run: build
-	./${BUILD_DIR}/${BINARY_NAME}
-
-# Clean up generated files
-clean:
-	rm -rf ${BUILD_DIR}
-	@echo "🧹 Cleaned up build files!"
-
-# Install dependencies
-deps:
-	go mod tidy
-	@echo "📦 Dependencies installed!"
-
-# Lint the code (requires golangci-lint)
-lint:
-	golangci-lint run || echo "⚠️  Linting issues found!"
-
-.PHONY: all build clean run deps lint
