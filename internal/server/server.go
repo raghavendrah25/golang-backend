@@ -3,19 +3,21 @@ package server
 import (
 	"net/http"
 
-	"github.com/Rhymond/go-money"
 	"github.com/gin-gonic/gin"
 	"github.com/raghavendrah25/golang-backend/internal/category"
 	"github.com/raghavendrah25/golang-backend/internal/product"
+	"github.com/raghavendrah25/golang-backend/internal/storage"
 )
 
 type Server struct {
-	Engine *gin.Engine
-	Config Config
+	Engine  *gin.Engine
+	Config  Config
+	storage storage.Storage
 }
 
 type Config struct {
 	Port string
+	storage storage.Storage
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -23,9 +25,11 @@ func NewServer(config Config) (*Server, error) {
 	s := &Server{
 		Engine: engine,
 		Config: config,
+		storage: config.storage,
 	}
-	engine.Use(s.CORSMiddleware, s.CheckRequest)
-	engine.GET("/products", s.Products)
+	engine.Use(s.CORSMiddleware)
+	engine.POST("/products", s.Products)
+	engine.GET("/getProducts", s.GetProducts)
 	engine.GET("/categories", s.Categories)
 	engine.GET("/ping", s.PingTest)
 
@@ -37,7 +41,7 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) CORSMiddleware(c *gin.Context) {
-	c.Header("Access-Control-Allow-Origin", "http://localhost:3001")
+	c.Header("Access-Control-Allow-Origin", "*")
 }
 
 func (s *Server) PingTest(c *gin.Context) {
@@ -66,67 +70,43 @@ func (s *Server) Categories(c *gin.Context) {
 }
 
 func (s *Server) Products(c *gin.Context) {
-	twoUSD := money.New(200, "USD")
-	fourUSD := money.New(400, "USD")
-	products := []product.Product{
-		{
-			ID:               "1",
-			Name:             "Test",
-			Image:            "https://www.practical-go-lessons.com/img/practical-go-lessons-book10.a8a05387.jpg",
-			ShortDescription: "New",
-			Description:      "This is my product",
-			PriceVATExcluded: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			VAT: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			TotalPrice: product.Amount{
-				Money:   fourUSD,
-				Display: fourUSD.Display(),
-			},
-		},
-		{
-			ID:               "2",
-			Name:             "Test",
-			Image:            "https://www.practical-go-lessons.com/img/practical-go-lessons-book10.a8a05387.jpg",
-			ShortDescription: "New",
-			Description:      "This is my product",
-			PriceVATExcluded: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			VAT: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			TotalPrice: product.Amount{
-				Money:   fourUSD,
-				Display: fourUSD.Display(),
-			},
-		},
-		{
-			ID:               "3",
-			Name:             "Test",
-			Image:            "https://www.practical-go-lessons.com/img/practical-go-lessons-book10.a8a05387.jpg",
-			ShortDescription: "New",
-			Description:      "This is my product",
-			PriceVATExcluded: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			VAT: product.Amount{
-				Money:   twoUSD,
-				Display: twoUSD.Display(),
-			},
-			TotalPrice: product.Amount{
-				Money:   fourUSD,
-				Display: fourUSD.Display(),
-			},
-		},
+	dynamoDB, err := storage.NewDynamoDB("ecommerce-dev", c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
+
+	// New product from request body (should be dynamically populated, not hardcoded)
+	var newProduct product.Product
+	if err := c.ShouldBindJSON(&newProduct); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product data"})
+		return
+	}
+
+	// Save the product to DynamoDB
+	err = dynamoDB.CreateProduct(newProduct, c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Product created successfully", "product": newProduct})
+}
+
+func (s *Server) GetProducts(c *gin.Context) {
+	dynamoDB, err := storage.NewDynamoDB("ecommerce-dev", c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get products from DynamoDB
+	products, err := dynamoDB.GetProducts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, products)
 }
 

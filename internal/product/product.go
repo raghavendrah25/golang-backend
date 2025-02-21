@@ -2,6 +2,11 @@ package product
 
 import "github.com/Rhymond/go-money"
 
+type Amount struct {
+	Money   *money.Money `json:"money"`
+	Display string       `json:"display"`
+}
+
 type Product struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
@@ -13,7 +18,3 @@ type Product struct {
 	TotalPrice       Amount `json:"totalPrice"`
 }
 
-type Amount struct {
-	Money   *money.Money `json:"money"`
-	Display string       `json:"display"`
-}
