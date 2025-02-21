@@ -27,6 +27,7 @@ func NewServer(config Config) (*Server, error) {
 	engine.Use(s.CORSMiddleware, s.CheckRequest)
 	engine.GET("/products", s.Products)
 	engine.GET("/categories", s.Categories)
+	engine.GET("/ping", s.PingTest)
 
 	return s, nil
 }
@@ -37,7 +38,11 @@ func (s *Server) Run() error {
 
 func (s *Server) CORSMiddleware(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "http://localhost:3001")
-} 
+}
+
+func (s *Server) PingTest(c *gin.Context) {
+	(*c).JSON(http.StatusOK, gin.H{"message": "pong"})
+}
 
 func (s *Server) Categories(c *gin.Context) {
 	categories := []category.Category{

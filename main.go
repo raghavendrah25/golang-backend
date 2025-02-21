@@ -7,9 +7,7 @@ import (
 )
 
 func main() {
-	server, err := server.NewServer(server.Config{
-		Port: "8080",
-	})
+	server, err := server.NewServer(server.Config{Port: "8080"})
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}
